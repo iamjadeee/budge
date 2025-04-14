@@ -1,18 +1,31 @@
-//https://script.google.com/macros/s/AKfycbzWF2iYrp7gQxxDeQmmTRxDfLClRGIL5twTiFsMEYbfYhSBZu-cTMOsPA4at8qyX3GoIw/exec
-const apiUrl = "https://script.google.com/macros/s/AKfycbzWF2iYrp7gQxxDeQmmTRxDfLClRGIL5twTiFsMEYbfYhSBZu-cTMOsPA4at8qyX3GoIw/exec"; // 替換為你的 API 網址
+// 切換顯示的頁面（支出紀錄或支出報表）
+function showTab(tabName) {
+    const tabs = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-button');
 
-const form = document.getElementById("recordForm");
-const recordsContainer = document.getElementById("records");
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
 
-// 讀取 Google Sheets 的記帳紀錄並顯示
+    buttons.forEach(button => {
+        button.classList.remove('active');
+    });
+
+    // 顯示選中的頁面和對應的按鈕
+    document.getElementById(tabName).classList.add('active');
+    document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+}
+
+// 載入記帳紀錄
 async function loadRecords() {
     try {
-        const response = await fetch(apiUrl); // `GET` 請求 API
-        const data = await response.json();   // 解析 JSON
+        const response = await fetch("https://script.google.com/macros/s/AKfycbzOfqGJi8M3wLYkIqZQ_0t7ZqUwZ70EZZo64uZUg4PeZ5vlNtTtPrafuNTacHLWxx2yAw/exec");
+        const data = await response.json();
 
-        recordsContainer.innerHTML = ""; // 清空舊資料
+        const recordsContainer = document.getElementById("recordsList");
+        recordsContainer.innerHTML = "";
 
-        for (let i = 1; i < data.length; i++) { // 跳過標題列
+        for (let i = 1; i < data.length; i++) {
             const [date, category, amount, note] = data[i];
 
             const recordElement = document.createElement("div");
@@ -30,8 +43,51 @@ async function loadRecords() {
     }
 }
 
-// 新增記帳資料
-form.addEventListener("submit", async function (event) {
+// 繪製圓餅圖（支出報表）
+function drawChart() {
+    // 確保有 <canvas id="expenseChart"></canvas> 元素
+    const ctx = document.getElementById('expenseChart');
+    if (!ctx) {
+        console.error("Canvas 元素未找到！");
+        return; // 如果找不到Canvas，則退出
+    }
+    
+    const chartData = {
+        labels: ['飲食', '交通', '娛樂', '其他'],
+        datasets: [{
+            data: [20, 30, 10, 40], // 這裡假設的是一些靜態資料，之後可以替換為動態資料
+            backgroundColor: ['#FF9999', '#66B3FF', '#99FF99', '#FFCC99'],
+            borderColor: '#ffffff',
+            borderWidth: 1
+        }]
+    };
+
+    // 使用 Chart.js 繪製圖表
+    new Chart(ctx, {
+        type: 'pie', // 設定為圓餅圖
+        data: chartData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top', // 圖例顯示在上方
+                },
+                tooltip: {
+                    callbacks: {
+                        // 顯示每個區塊的百分比
+                        label: function(tooltipItem) {
+                            return tooltipItem.label + ": " + tooltipItem.raw + "%";
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+// 表單送出
+document.getElementById("recordForm").addEventListener("submit", async function(event) {
     event.preventDefault();
 
     const date = document.getElementById("date").value;
@@ -41,19 +97,29 @@ form.addEventListener("submit", async function (event) {
 
     const newRecord = { date, category, amount, note };
 
-    await fetch(apiUrl, {
-        method: "POST",
-        body: JSON.stringify(newRecord),
-        headers: { "Content-Type": "application/json" },
-        mode: "no-cors"  // 避免 CORS 錯誤
-    });
+    try {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbzOfqGJi8M3wLYkIqZQ_0t7ZqUwZ70EZZo64uZUg4PeZ5vlNtTtPrafuNTacHLWxx2yAw/exec", {
+            method: "POST",
+            body: JSON.stringify(newRecord),
+            headers: { "Content-Type": "application/json" },
+        });
 
-    form.reset();
-    alert("記帳成功！（請到 Google Sheets 查看資料）");
-
-    // **重新載入紀錄，確保新資料即時顯示**
-    setTimeout(loadRecords, 2000); // 等 2 秒後重新載入資料
+        if (response.ok) {
+            alert("記帳成功！（請到 Google Sheets 查看資料）");
+            document.getElementById("recordForm").reset();
+            setTimeout(loadRecords, 2000); // 延遲載入紀錄
+        } else {
+            throw new Error("記帳失敗，請稍後再試");
+        }
+    } catch (error) {
+        console.error("錯誤:", error);
+        alert(error.message);
+    }
 });
 
-// **網頁載入時自動載入記帳紀錄**
-window.addEventListener("load", loadRecords);
+// 頁面載入後自動顯示支出紀錄與支出報表
+window.addEventListener('load', function() {
+    showTab('records');
+    loadRecords();
+    drawChart();
+});
