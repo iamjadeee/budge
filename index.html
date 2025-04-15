@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>記帳本</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -26,7 +25,7 @@
                 </select>
 
                 <label for="amount">金額：</label>
-                <input type="number" id="amount" required>
+                <input type="number" id="amount" required min="0">
 
                 <label for="note">備註：</label>
                 <input type="text" id="note">
@@ -37,22 +36,19 @@
 
         <!-- 右側：分頁區塊 -->
         <div class="records-section">
-            <!-- 頁籤 -->
             <div class="tabs">
                 <button class="tab-button" onclick="showTab('records')">支出紀錄</button>
                 <button class="tab-button" onclick="showTab('report')">支出報表</button>
             </div>
 
-            <!-- 支出紀錄頁面 -->
             <div id="records" class="tab-content">
                 <h2>支出紀錄</h2>
                 <div id="recordsList"></div>
             </div>
 
-            <!-- 支出報表頁面 -->
             <div id="report" class="tab-content">
                 <h2>支出報表</h2>
-                <canvas id="expenseChart" width="400" height="400"></canvas> <!-- 圓餅圖 -->
+                <canvas id="expenseChart" width="400" height="400"></canvas>
             </div>
         </div>
     </div>
