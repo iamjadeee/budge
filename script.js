@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwgMc8sDSIlizA-Q4KOx184Yqr3MV0X8umQ9BhlqDN9h1Tr6rxYas2rcBaOY3BVWELRpA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyIUpHhECcf-X3Q59hLGk9PgWZkCZOsugBBzn4mdPBY2VYpH3jyuLdgW0JwVmDqaWY6yw/exec";
 
 // 切換頁籤
 function showTab(tabName) {
@@ -44,7 +44,7 @@ async function loadRecords() {
     }
 }
 
-// 立刻插入一筆紀錄（不等 fetch）
+// 立刻插入一筆紀錄
 function appendRecordToList(record) {
     const { date, category, amount, note } = record;
 
@@ -124,27 +124,23 @@ document.getElementById("recordForm").addEventListener("submit", async function 
     const newRecord = { date, category, amount, note };
 
     try {
-        const response = await fetch(API_URL, {
+        await fetch(API_URL, {
             method: "POST",
             body: JSON.stringify(newRecord),
             headers: { "Content-Type": "application/json" },
-            mode: "no-cors"
+            mode: "no-cors" // 不能用 response.json()
         });
 
-        const result = await response.json();
-
-        if (result.success) {
-            alert("記帳成功！");
-            document.getElementById("recordForm").reset();
-            appendRecordToList(newRecord);
-        } else {
-            throw new Error("後端回傳失敗");
-        }
+        // ⚠️ 不再讀取回傳結果，直接顯示成功並新增
+        alert("記帳成功！");
+        document.getElementById("recordForm").reset();
+        appendRecordToList(newRecord);
     } catch (error) {
         console.error("錯誤:", error);
-        alert(error.message);
+        alert("資料傳送失敗，請稍後再試");
     }
 });
+
 
 // 初始畫面載入
 window.addEventListener("load", () => {
