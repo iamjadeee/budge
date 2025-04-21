@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyIUpHhECcf-X3Q59hLGk9PgWZkCZOsugBBzn4mdPBY2VYpH3jyuLdgW0JwVmDqaWY6yw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw-z30QeT6UxjNZhCvpg8Hmldcp8Zuk58IdRX8FrJMelObtLAxo1xXJdyeBYwFsnUBLVA/exec";
 
 // 切換頁籤
 function showTab(tabName) {
@@ -140,6 +140,62 @@ document.getElementById("recordForm").addEventListener("submit", async function 
         alert("資料傳送失敗，請稍後再試");
     }
 });
+
+// 立刻插入一筆紀錄
+function appendRecordToList(record) {
+    const { date, category, amount, note } = record;
+
+    const recordElement = document.createElement("div");
+    recordElement.classList.add("record");
+    recordElement.innerHTML = `
+        <p><strong>日期：</strong>${date}</p>
+        <p><strong>類別：</strong>${category}</p>
+        <p><strong>金額：</strong>${amount}</p>
+        <p><strong>備註：</strong>${note}</p>
+        <button class="delete-btn" onclick="deleteRecord(event)">🗑️ 刪除</button>
+    `;
+
+    const recordsContainer = document.getElementById("recordsList");
+    recordsContainer.insertBefore(recordElement, recordsContainer.firstChild);
+}
+
+// 刪除紀錄
+async function deleteRecord(event) {
+    const recordElement = event.target.closest('.record'); // 找到按鈕所在的紀錄元素
+    const recordsContainer = document.getElementById("recordsList");
+
+    // 取得這筆紀錄的資料（日期、類別、金額、備註）
+    const date = recordElement.querySelector('p strong:nth-child(1)').nextSibling.textContent.trim();
+    const category = recordElement.querySelector('p strong:nth-child(2)').nextSibling.textContent.trim();
+    const amount = recordElement.querySelector('p strong:nth-child(3)').nextSibling.textContent.trim();
+    const note = recordElement.querySelector('p strong:nth-child(4)').nextSibling.textContent.trim();
+    
+    const recordToDelete = { date, category, amount, note };
+
+    try {
+        // 發送 POST 請求到 Apps Script
+        const response = await fetch(API_URL, {
+            method: "POST", // 使用 POST 方法
+            body: JSON.stringify({ action: "delete", record: recordToDelete }), // 傳遞刪除的紀錄資料
+            headers: { "Content-Type": "application/json" },
+            mode: "no-cors" // 根據你的需求進行設置
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 如果刪除成功，從 UI 中移除該筆紀錄
+            recordsContainer.removeChild(recordElement);
+            alert("紀錄已刪除！");
+        } else {
+            throw new Error("刪除失敗：" + (data.error || "未知錯誤"));
+        }
+    } catch (error) {
+        console.error("刪除紀錄失敗：", error);
+        alert("刪除紀錄失敗，請稍後再試");
+    }
+}
+
 
 
 // 初始畫面載入
